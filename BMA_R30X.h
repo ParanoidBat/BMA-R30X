@@ -3,8 +3,8 @@
   Created by Batman - CEO Meem Ent., April 18, 2021.
 */
 
-#ifndef BMA-R30X_h
-#define BMA-R30X_h
+#ifndef BMA_R30X_h
+#define BMA_R30X_h
 
 #include "Arduino.h"
 
@@ -42,7 +42,7 @@ class BMA{
         uint16_t rx_data_length = 0;
         Stream *commSerial = NULL;
 
-        BMA();
+        BMA(SoftwareSerial *sw);
         bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);
         uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
         bool verifyPassword(uint32_t password = M_PASSWORD);
@@ -50,7 +50,6 @@ class BMA{
         bool fingerSearch();
 
     private:
-        SoftwareSerial sensorSerial(2, 3); // rx, tx -> yellow, white
 
         uint8_t collectFingerImage(uint8_t rx_response);
         uint8_t generateCharacterFile(uint8_t bufferId[]);

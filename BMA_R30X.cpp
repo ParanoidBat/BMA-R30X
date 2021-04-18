@@ -4,12 +4,12 @@
 */
 
 #include "Arduino.h"
-#include "BMA-R30X.h"
+#include "BMA_R30X.h"
 
 
-BMA::BMA(){
-    commSerial = &sensorSerial
-    sensorSerial.begin(57600); // begin communication on pins specified
+BMA::BMA(SoftwareSerial *sw){
+    commSerial = sw;
+    sw -> begin(57600); // begin communication on pins specified
 }
 
 bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false){
@@ -304,6 +304,7 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
 }
 
 bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
+    Serial.println("here");
     // store password seperately in 4 bytes. isn't a necessity
     uint8_t password_bytes[4] = {0};
     password_bytes[0] = password & 0xFF;
@@ -315,9 +316,7 @@ bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
     bool tx_response = sendPacket(PID_COMMAND, CMD_VERIFY_PASSWORD, password_bytes, 4);
     uint8_t rx_response = receivePacket();
     
-    if(rx_response == 0x00){
-        return true;
-    }
+    if(rx_response == 0x00) return true;
     return false;
 }
 
