@@ -42,7 +42,7 @@ class BMA{
         uint16_t rx_data_length = 0;
         Stream *commSerial = NULL;
 
-        BMA(SoftwareSerial *sw);
+        BMA();
         bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);
         uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
         bool verifyPassword(uint32_t password = M_PASSWORD);

@@ -7,7 +7,8 @@
 #include "BMA_R30X.h"
 
 
-BMA::BMA(SoftwareSerial *sw){
+BMA::BMA(){
+    SoftwareSerial *sw = new SoftwareSerial(2, 3);
     commSerial = sw;
     sw -> begin(57600); // begin communication on pins specified
 }
