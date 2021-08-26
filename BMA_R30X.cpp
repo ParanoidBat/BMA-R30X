@@ -1,5 +1,5 @@
 /*
-    BMA-R30X.h - Library for iterfacing with r30x series fingerprint scanners.
+    BMA-R30X.h - Library for interfacing with r30x series fingerprint scanners.
     Created by Batman - CEO Meem Ent., April 18, 2021.
 */
 
@@ -14,7 +14,7 @@ BMA::BMA(){
 }
 
 bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false){
-    // seperate header and address into bytes
+    // separate header and address into bytes
     uint8_t header_bytes[2];
     uint8_t address_bytes[4];
 
@@ -305,7 +305,6 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
 }
 
 bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
-    Serial.println("here");
     // store password seperately in 4 bytes. isn't a necessity
     uint8_t password_bytes[4] = {0};
     password_bytes[0] = password & 0xFF;
@@ -338,7 +337,7 @@ bool BMA::enrollFinger(){
     bufferId[0] = 2;
     generateCharacterFile(bufferId);
 
-    // comboine both templates to make 1 template
+    // combine both templates to make 1 template
     sendPacket(PID_COMMAND, CMD_REG_MODEL, NULL, 0 );
     rx_response = receivePacket();
     
