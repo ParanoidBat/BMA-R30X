@@ -6,7 +6,6 @@
 #include "Arduino.h"
 #include "BMA_R30X.h"
 
-
 BMA::BMA(){
     SoftwareSerial *sw = new SoftwareSerial(2, 3);
     commSerial = sw;
@@ -123,35 +122,29 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
 }
 
 uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false){
-    uint8_t confirm_code = 0xFF;
-    
     uint8_t* data_buffer = new uint8_t[64]; // data buffer must be 64 bytes
     uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
     uint16_t serial_buffer_length = 0;
     uint8_t byte_buffer = 0;
+    uint32_t start_time = millis();
 
-    // wait for response for set timout
-    while(timeout > 0){
+    // wait for response for set timeout
+    while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
         if(commSerial->available()){
             byte_buffer = commSerial->read();
-            
-            if(print_data) Serial.println(byte_buffer, HEX);
-
+        
             serial_buffer[serial_buffer_length] = byte_buffer;
             serial_buffer_length++;
         }
-
-        timeout--;
-        delay(1);
     }
 
     if(serial_buffer_length == 0){
-        Serial.println("received no response\n");
+        Serial.println("received no response");
         return false;
     }
 
     if(serial_buffer_length < 10){
-        Serial.print("bad packet nigga\n");
+        Serial.println("bad packet nigga");
         return false;
     }
 
@@ -304,6 +297,43 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
     }
 }
 
+uint8_t BMA::receiveTemplate(){
+    uint8_t byte_buffer = 0;
+    uint32_t timeout = 5000;
+    uint32_t start_time = millis();
+    uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
+    uint16_t serial_buffer_length = 0;
+
+    while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
+        if(commSerial->available()){
+            byte_buffer = commSerial->read();
+        
+            serial_buffer[serial_buffer_length] = byte_buffer;
+            serial_buffer_length++;
+        }
+    }
+
+    if(serial_buffer_length == 0){
+        Serial.println("received no response");
+        return 0xff;
+    }
+
+    if(serial_buffer_length < 10){
+        Serial.println("bad packet nigga");
+        return 0xff;
+    }
+
+    template_file = new uint8_t[serial_buffer_length];
+    template_length = serial_buffer_length;
+
+    for (uint16_t i = 0; i < serial_buffer_length; i++){
+        template_file = serial_buffer[i];
+    }
+
+    // confirmation code
+    return serial_buffer[9];
+}
+
 bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
     // store password seperately in 4 bytes. isn't a necessity
     uint8_t password_bytes[4] = {0};
@@ -330,7 +360,7 @@ bool BMA::enrollFinger(){
     uint8_t bufferId[1] = {1};
     generateCharacterFile(bufferId);
 
-    delay(2000);
+    delay(1000);
     
     rx_response = collectFingerImage(0x02);
         
@@ -340,7 +370,7 @@ bool BMA::enrollFinger(){
     // combine both templates to make 1 template
     sendPacket(PID_COMMAND, CMD_REG_MODEL, NULL, 0 );
     rx_response = receivePacket();
-    
+
     if(!rx_response == 0x00) return false;
 
     uint8_t data[3] = {0};
@@ -353,7 +383,9 @@ bool BMA::enrollFinger(){
     sendPacket(PID_COMMAND, CMD_STORE_TEMPLATE, data, 3);
     rx_response = receivePacket();
 
-    if(rx_response == 0x00) return true;
+    if(rx_response == 0x00){
+        return uploadTemplate();
+    }
 
     return false;
 }
@@ -362,10 +394,9 @@ bool BMA::fingerSearch(){
     // place finger, generate a character/template file and search in library. It'll return fingerID(location it was stored to) and score
     
     uint8_t rx_response = 0x02;
+    uint8_t bufferId[1] = {1};
 
     rx_response = collectFingerImage(rx_response);
-        
-    uint8_t bufferId[1] = {1};
     generateCharacterFile(bufferId);
 
     uint8_t data[5] = {0};
@@ -385,7 +416,6 @@ bool BMA::fingerSearch(){
     return false;
 }
 
-
 uint8_t BMA::collectFingerImage(uint8_t rx_response){
     while(rx_response == 0x02){
         Serial.println("Place finger");
@@ -402,4 +432,57 @@ uint8_t BMA::generateCharacterFile(uint8_t bufferId[]){
     uint8_t rx_response = receivePacket();
 
     return rx_response;
+}
+
+bool BMA::uploadTemplate(){
+    /*
+        Upload template from charBuffer1 to upper computer.
+        Currently acknowledge packet is prepended and end-of-data package is appended.
+        Will clean it up after research into how to clean data when we reach the phase of downloading data into the module
+    */
+
+    uint8_t bufferId[1] = {1};
+
+    sendPacket(PID_COMMAND, CMD_UPLOAD_TEMPLATE, bufferId, 1);
+    uint8_t rx_response = receiveTemplate();
+
+    if(rx_response == 0x00){
+        if(template_length > 0){
+            for(int i = 0; i < template_length; i++){
+                // Serial.print(template_file[i], HEX);
+                // do some stuff here
+            }
+        }
+        return true;
+    }
+    else if(rx_response == 0x0d){
+        Serial.println("template not uploaded");
+    }
+    else if(rx_response == 0xff){
+        Serial.println("corrputed or no data received");
+    }
+
+    return false;
+}
+
+bool BMA::readTemplate(){
+    /*
+        read template from library and load into charbuffer 1 and 2, then upload to upper computer
+    */
+    uint8_t data[3];
+    uint16_t page_id = 3;
+    uint8_t buffer_id = 1;
+
+    data[0] = page_id & 0xff;
+    data[1] = (page_id >> 8) & 0xff;
+    data[2] = buffer_id;
+
+    sendPacket(PID_COMMAND, CMD_READ_TEMPLATE, data, 3);
+
+    uint8_t rx_response = receivePacket();
+    if(rx_response != 0x00){
+        return false;
+    }
+
+    return uploadTemplate();
 }

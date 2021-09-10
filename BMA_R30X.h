@@ -1,6 +1,7 @@
 /*
   BMA-R30X.h - Library for iterfacing with r30x series fingerprint scanners.
-  Created by Batman - CEO Meem Ent., April 18, 2021.
+  Created by Batman - CEO Meem Ent.
+  Created on April 18, 2021.
 */
 
 #ifndef BMA_R30X_h
@@ -10,7 +11,7 @@
 
 #include <SoftwareSerial.h>
 
-// default module password and address. each 4 bytes
+// default module password and address.
 #define M_PASSWORD 0x00000000
 #define M_ADDRESS 0xFFFFFFFF
 
@@ -28,7 +29,9 @@
 #define CMD_GEN_CHAR_FILE 0x02
 #define CMD_REG_MODEL 0x05
 #define CMD_STORE_TEMPLATE 0x06
+#define CMD_UPLOAD_TEMPLATE 0x08
 #define CMD_SEARCH_LIBRARY 0x04
+#define CMD_READ_TEMPLATE 0x07
 
 // length of buffer used to read serial data
 #define FPS_DEFAULT_SERIAL_BUFFER_LENGTH 300
@@ -40,17 +43,21 @@ class BMA{
     public:
         uint8_t *rx_data = NULL;
         uint16_t rx_data_length = 0;
+        uint8_t *template_file = NULL;
+        uint16_t template_length = 0;
         Stream *commSerial = NULL;
 
         BMA();
         bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);
         uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
+        uint8_t receiveTemplate();
         bool verifyPassword(uint32_t password = M_PASSWORD);
         bool enrollFinger();
         bool fingerSearch();
+        bool uploadTemplate();
+        bool readTemplate();
 
     private:
-
         uint8_t collectFingerImage(uint8_t rx_response);
         uint8_t generateCharacterFile(uint8_t bufferId[]);
 };
