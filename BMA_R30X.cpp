@@ -13,7 +13,7 @@ BMA::BMA(){
 }
 
 bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false){
-    // separate header and address into bytes
+    // separate header and address into bytes to respect big endian format
     uint8_t header_bytes[2];
     uint8_t address_bytes[4];
 
@@ -47,7 +47,26 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     check_sum_in_bytes[1] = (check_sum >> 8) & 0xFF; // get high byte
 
     if(print_data){
-        Serial.println("writing");
+        Serial.println("Start printing data");
+
+        Serial.print(header_bytes[1], HEX);
+        Serial.println(header_bytes[0], HEX);
+        Serial.print(address_bytes[3], HEX);
+        Serial.print(address_bytes[2], HEX);
+        Serial.print(address_bytes[1], HEX);
+        Serial.println(address_bytes[0], HEX);
+        Serial.println(pid, HEX);
+        Serial.print(packet_length_in_bytes[1], HEX);
+        Serial.println(packet_length_in_bytes[0], HEX);
+        Serial.println(cmd, HEX);
+        for(int i = 0; i < data_length; i++){
+            Serial.print(data[i], HEX);
+        }
+        Serial.println();
+        Serial.print(check_sum_in_bytes[1], HEX);
+        Serial.println(check_sum_in_bytes[0], HEX);
+        
+        Serial.println("End");
     }
     
     // write to serial. high bytes will be transferred first
@@ -55,74 +74,36 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     commSerial->write(header_bytes[1]);
     commSerial->write(header_bytes[0]);
 
-    if(print_data){
-        Serial.print(header_bytes[1], HEX);
-        Serial.println(header_bytes[0], HEX);
-    }
-    
     // address
     commSerial->write(address_bytes[3]);
     commSerial->write(address_bytes[2]);
     commSerial->write(address_bytes[1]);
     commSerial->write(address_bytes[0]);
 
-    if(print_data){
-        Serial.print(address_bytes[3], HEX);
-        Serial.print(address_bytes[2], HEX);
-        Serial.print(address_bytes[1], HEX);
-        Serial.println(address_bytes[0], HEX);
-    }
-    
     // packet id
     commSerial->write(pid);
-
-    if(print_data){
-        Serial.println(pid, HEX);
-    }
     
     // packet length
     commSerial->write(packet_length_in_bytes[1]);
     commSerial->write(packet_length_in_bytes[0]);
 
-    if(print_data){
-        Serial.print(packet_length_in_bytes[1], HEX);
-        Serial.println(packet_length_in_bytes[0], HEX);
-    }
-    
     // command
     commSerial->write(cmd);
 
-    if(print_data){
-        Serial.println(cmd, HEX);
-    }
-    
     // data
-    for(int i = (data_length - 1); i >= 0; i--){
+    for(int i = 0; i < data_length; i++){
         commSerial->write(data[i]);
-        
-        if(print_data){
-        Serial.print(data[i], HEX);
-        }
-    }
-    if(print_data){
-        Serial.println();
     }
     
     // checksum
     commSerial->write(check_sum_in_bytes[1]);
     commSerial->write(check_sum_in_bytes[0]);
 
-    if(print_data){
-        Serial.print(check_sum_in_bytes[1], HEX);
-        Serial.println(check_sum_in_bytes[0], HEX);
-        
-        Serial.println("written");
-    }
     return true;
 }
 
 uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false){
-    uint8_t* data_buffer = new uint8_t[64]; // data buffer must be 64 bytes
+    uint8_t* data_buffer = new uint8_t[64];
     uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
     uint16_t serial_buffer_length = 0;
     uint8_t byte_buffer = 0;
@@ -209,7 +190,7 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
                 rx_packet_length[0] = serial_buffer[token + 1]; // low byte
                 rx_packet_length[1] = serial_buffer[token]; // high byte
                 rx_packet_length_2b = uint16_t(rx_packet_length[1] << 8) + rx_packet_length[0]; // the full length
-                data_length = rx_packet_length_2b - 3; // 2 checksum , 1 conformation code
+                data_length = rx_packet_length_2b - 3; // 2 checksum , 1 confirmation code
                 
                 token ++;
 
@@ -219,7 +200,7 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
             return false;
 
         // case 8 won't be hit as after case 7, token value is 9
-        // read conformation code
+        // read confirmation code
         case 9:
             confirmation_code = serial_buffer[token];
             break;
@@ -257,7 +238,7 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
             // if data is present
             else if((serial_buffer[token + (data_length -1)] > 0) || ((serial_buffer[token + 1 + (data_length -1)] > 0))){
                 checksum_bytes[0] = serial_buffer[token + 1 + (data_length -1 )]; // low byte
-                checksum_bytes[1] = serial_buffer[token + (data_length -1 )]; // high byte {changed here}
+                checksum_bytes[1] = serial_buffer[token + (data_length -1 )]; // high byte
                 checksum = uint16_t (checksum_bytes[1] << 8) + checksum_bytes[0];
 
                 uint16_t tmp = 0;
@@ -298,10 +279,12 @@ uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data =
 }
 
 uint8_t BMA::receiveTemplate(){
+    // function exclusively written for reading template data sent by module
+
     uint8_t byte_buffer = 0;
     uint32_t timeout = 5000;
     uint32_t start_time = millis();
-    uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
+    uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0};
     uint16_t serial_buffer_length = 0;
 
     while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
@@ -335,7 +318,7 @@ uint8_t BMA::receiveTemplate(){
 }
 
 bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
-    // store password seperately in 4 bytes. isn't a necessity
+    // store password seperately in 4 bytes.
     uint8_t password_bytes[4] = {0};
     password_bytes[0] = password & 0xFF;
     password_bytes[1] = (password >> 8);
@@ -376,9 +359,9 @@ bool BMA::enrollFinger(){
     uint8_t data[3] = {0};
     uint16_t location = 3; // refactor to get position dynamically
     
-    data[0] = location & 0xFF; // low byte
-    data[1] = (location >> 8) & 0xFF; // high byte
-    data[2] = 0x01; // buffer Id 1
+    data[0] = 0x01; // buffer Id 1
+    data[1] = location & 0xFF; // low byte
+    data[2] = (location >> 8) & 0xFF; // high byte
 
     sendPacket(PID_COMMAND, CMD_STORE_TEMPLATE, data, 3);
     rx_response = receivePacket();
@@ -391,8 +374,10 @@ bool BMA::enrollFinger(){
 }
 
 bool BMA::fingerSearch(){
-    // place finger, generate a character/template file and search in library. It'll return fingerID(location it was stored to) and score
-    
+    /* 
+        Place finger, generate a character/template file and search in library. 
+        It'll return fingerID (location it was stored to) and score
+    */
     uint8_t rx_response = 0x02;
     uint8_t bufferId[1] = {1};
 
@@ -403,11 +388,11 @@ bool BMA::fingerSearch(){
     uint16_t number = 4; // number of templates to search. must be +1 from the last location saved
     uint16_t start = 0;
 
-    data[0] = number & 0xFF;
-    data[1] = (number >> 8) & 0xFF;
-    data[2] = start & 0xFF;
-    data[3] = (start >> 8) & 0xFF;
-    data[4] = 0x01; // buffer Id
+    data[0] = 0x01; // buffer Id
+    data[1] = start & 0xFF;
+    data[2] = (start >> 8) & 0xFF;
+    data[3] = number & 0xFF;
+    data[4] = (number >> 8) & 0xFF;
 
     sendPacket(PID_COMMAND, CMD_SEARCH_LIBRARY, data, 5);
     rx_response = receivePacket();
@@ -473,9 +458,9 @@ bool BMA::readTemplate(){
     uint16_t page_id = 3;
     uint8_t buffer_id = 1;
 
-    data[0] = page_id & 0xff;
-    data[1] = (page_id >> 8) & 0xff;
-    data[2] = buffer_id;
+    data[0] = buffer_id;
+    data[2] = page_id & 0xff;
+    data[3] = (page_id >> 8) & 0xff;
 
     sendPacket(PID_COMMAND, CMD_READ_TEMPLATE, data, 3);
 
