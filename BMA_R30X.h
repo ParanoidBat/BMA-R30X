@@ -55,10 +55,10 @@ class BMA{
         bool enrollFinger();
         bool fingerSearch();
         bool uploadTemplate();
-        bool readTemplate();
+        bool readTemplateFromLib();
 
     private:
-        uint8_t collectFingerImage(uint8_t rx_response);
+        uint8_t collectFingerImage();
         uint8_t generateCharacterFile(uint8_t bufferId[]);
 };
 

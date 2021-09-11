@@ -338,14 +338,14 @@ bool BMA::enrollFinger(){
     
     uint8_t rx_response = 0x02;
 
-    rx_response = collectFingerImage(rx_response);
+    rx_response = collectFingerImage();
         
     uint8_t bufferId[1] = {1};
     generateCharacterFile(bufferId);
 
     delay(1000);
     
-    rx_response = collectFingerImage(0x02);
+    rx_response = collectFingerImage();
         
     bufferId[0] = 2;
     generateCharacterFile(bufferId);
@@ -381,7 +381,7 @@ bool BMA::fingerSearch(){
     uint8_t rx_response = 0x02;
     uint8_t bufferId[1] = {1};
 
-    rx_response = collectFingerImage(rx_response);
+    rx_response = collectFingerImage();
     generateCharacterFile(bufferId);
 
     uint8_t data[5] = {0};
@@ -401,7 +401,9 @@ bool BMA::fingerSearch(){
     return false;
 }
 
-uint8_t BMA::collectFingerImage(uint8_t rx_response){
+uint8_t BMA::collectFingerImage(){
+    uint8_t rx_response = 0x02;
+
     while(rx_response == 0x02){
         Serial.println("Place finger");
         sendPacket(PID_COMMAND, CMD_COLLECT_FINGER_IMAGE, NULL, 0);
@@ -450,7 +452,7 @@ bool BMA::uploadTemplate(){
     return false;
 }
 
-bool BMA::readTemplate(){
+bool BMA::readTemplateFromLib(){
     /*
         read template from library and load into charbuffer 1 and 2, then upload to upper computer
     */
