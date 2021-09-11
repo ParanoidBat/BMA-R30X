@@ -45,29 +45,6 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
 
     check_sum_in_bytes[0] = check_sum & 0xFF; // get low byte
     check_sum_in_bytes[1] = (check_sum >> 8) & 0xFF; // get high byte
-
-    if(print_data){
-        Serial.println("Start printing data");
-
-        Serial.print(header_bytes[1], HEX);
-        Serial.println(header_bytes[0], HEX);
-        Serial.print(address_bytes[3], HEX);
-        Serial.print(address_bytes[2], HEX);
-        Serial.print(address_bytes[1], HEX);
-        Serial.println(address_bytes[0], HEX);
-        Serial.println(pid, HEX);
-        Serial.print(packet_length_in_bytes[1], HEX);
-        Serial.println(packet_length_in_bytes[0], HEX);
-        Serial.println(cmd, HEX);
-        for(int i = 0; i < data_length; i++){
-            Serial.print(data[i], HEX);
-        }
-        Serial.println();
-        Serial.print(check_sum_in_bytes[1], HEX);
-        Serial.println(check_sum_in_bytes[0], HEX);
-        
-        Serial.println("End");
-    }
     
     // write to serial. high bytes will be transferred first
     // header
@@ -98,6 +75,29 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     // checksum
     commSerial->write(check_sum_in_bytes[1]);
     commSerial->write(check_sum_in_bytes[0]);
+
+    if(print_data){
+        Serial.println("Start printing data");
+
+        Serial.print(header_bytes[1], HEX);
+        Serial.println(header_bytes[0], HEX);
+        Serial.print(address_bytes[3], HEX);
+        Serial.print(address_bytes[2], HEX);
+        Serial.print(address_bytes[1], HEX);
+        Serial.println(address_bytes[0], HEX);
+        Serial.println(pid, HEX);
+        Serial.print(packet_length_in_bytes[1], HEX);
+        Serial.println(packet_length_in_bytes[0], HEX);
+        Serial.println(cmd, HEX);
+        for(int i = 0; i < data_length; i++){
+            Serial.print(data[i], HEX);
+        }
+        Serial.println();
+        Serial.print(check_sum_in_bytes[1], HEX);
+        Serial.println(check_sum_in_bytes[0], HEX);
+        
+        Serial.println("End");
+    }
 
     return true;
 }
