@@ -12,7 +12,7 @@ BMA::BMA(){
     sw -> begin(57600); // begin communication on pins specified
 }
 
-bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false){
+bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data){
     // separate header and address into bytes to respect big endian format
     uint8_t header_bytes[2];
     uint8_t address_bytes[4];
@@ -102,7 +102,7 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     return true;
 }
 
-uint8_t BMA::receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false){
+uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
     uint8_t* data_buffer = new uint8_t[64];
     uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
     uint16_t serial_buffer_length = 0;
@@ -310,14 +310,14 @@ uint8_t BMA::receiveTemplate(){
     template_length = serial_buffer_length;
 
     for (uint16_t i = 0; i < serial_buffer_length; i++){
-        template_file = serial_buffer[i];
+        template_file[i] = serial_buffer[i];
     }
 
     // confirmation code
     return serial_buffer[9];
 }
 
-bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
+bool BMA::verifyPassword(uint32_t password){
     // store password seperately in 4 bytes.
     uint8_t password_bytes[4] = {0};
     password_bytes[0] = password & 0xFF;
@@ -326,8 +326,9 @@ bool BMA::verifyPassword(uint32_t password = M_PASSWORD){
     password_bytes[3] = (password >> 24);
 
 
-    bool tx_response = sendPacket(PID_COMMAND, CMD_VERIFY_PASSWORD, password_bytes, 4);
-    uint8_t rx_response = receivePacket();
+    sendPacket(PID_COMMAND, CMD_VERIFY_PASSWORD, password_bytes, 4);
+    uint8_t rx_response = 0xff;
+    rx_response = receivePacket();
     
     if(rx_response == 0x00) return true;
     return false;
