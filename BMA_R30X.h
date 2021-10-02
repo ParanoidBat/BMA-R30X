@@ -45,7 +45,6 @@ class BMA{
         uint16_t rx_data_length = 0;
         uint8_t *template_file = NULL;
         uint16_t template_length = 0;
-        Stream *commSerial = NULL;
 
         BMA();
         bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);

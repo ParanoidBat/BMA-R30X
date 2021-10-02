@@ -6,11 +6,7 @@
 #include "Arduino.h"
 #include "BMA_R30X.h"
 
-BMA::BMA(){
-    SoftwareSerial *sw = new SoftwareSerial(2, 3);
-    commSerial = sw;
-    sw -> begin(57600); // begin communication on pins specified
-}
+BMA::BMA(){}
 
 bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data){
     // separate header and address into bytes to respect big endian format
@@ -48,33 +44,33 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     
     // write to serial. high bytes will be transferred first
     // header
-    commSerial->write(header_bytes[1]);
-    commSerial->write(header_bytes[0]);
+    Serial.write(header_bytes[1]);
+    Serial.write(header_bytes[0]);
 
     // address
-    commSerial->write(address_bytes[3]);
-    commSerial->write(address_bytes[2]);
-    commSerial->write(address_bytes[1]);
-    commSerial->write(address_bytes[0]);
+    Serial.write(address_bytes[3]);
+    Serial.write(address_bytes[2]);
+    Serial.write(address_bytes[1]);
+    Serial.write(address_bytes[0]);
 
     // packet id
-    commSerial->write(pid);
+    Serial.write(pid);
     
     // packet length
-    commSerial->write(packet_length_in_bytes[1]);
-    commSerial->write(packet_length_in_bytes[0]);
+    Serial.write(packet_length_in_bytes[1]);
+    Serial.write(packet_length_in_bytes[0]);
 
     // command
-    commSerial->write(cmd);
+    Serial.write(cmd);
 
     // data
     for(int i = 0; i < data_length; i++){
-        commSerial->write(data[i]);
+        Serial.write(data[i]);
     }
     
     // checksum
-    commSerial->write(check_sum_in_bytes[1]);
-    commSerial->write(check_sum_in_bytes[0]);
+    Serial.write(check_sum_in_bytes[1]);
+    Serial.write(check_sum_in_bytes[0]);
 
     if(print_data){
         Serial.println("Start printing data");
@@ -111,8 +107,8 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
 
     // wait for response for set timeout
     while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
-        if(commSerial->available()){
-            byte_buffer = commSerial->read();
+        if(Serial.available()){
+            byte_buffer = Serial.read();
         
             serial_buffer[serial_buffer_length] = byte_buffer;
             serial_buffer_length++;
@@ -288,8 +284,8 @@ uint8_t BMA::receiveTemplate(){
     uint16_t serial_buffer_length = 0;
 
     while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
-        if(commSerial->available()){
-            byte_buffer = commSerial->read();
+        if(Serial.available()){
+            byte_buffer = Serial.read();
         
             serial_buffer[serial_buffer_length] = byte_buffer;
             serial_buffer_length++;
