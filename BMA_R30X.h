@@ -8,8 +8,15 @@
 #define BMA_R30X_h
 
 #include "Arduino.h"
-
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include <SoftwareSerial.h>
+
+// OLED screen resolution ('0.96)
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
 
 // default module password and address.
 #define M_PASSWORD 0x00000000
@@ -41,24 +48,26 @@
 
 class BMA{
     public:
-        uint8_t *rx_data = NULL;
-        uint16_t rx_data_length = 0;
-        uint8_t *template_file = NULL;
-        uint16_t template_length = 0;
+      uint8_t *rx_data = NULL;
+      uint16_t rx_data_length = 0;
+      uint8_t *template_file = NULL;
+      uint16_t template_length = 0;
+      Adafruit_SSD1306 *display = NULL;
 
-        BMA();
-        bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);
-        uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
-        uint8_t receiveTemplate();
-        bool verifyPassword(uint32_t password = M_PASSWORD);
-        bool enrollFinger();
-        bool fingerSearch();
-        bool uploadTemplate();
-        bool readTemplateFromLib();
+      BMA();
+      bool sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data = false);
+      uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
+      uint8_t receiveTemplate();
+      bool verifyPassword(uint32_t password = M_PASSWORD);
+      bool enrollFinger();
+      bool fingerSearch();
+      bool uploadTemplate();
+      bool readTemplateFromLib();
 
     private:
-        uint8_t collectFingerImage();
-        uint8_t generateCharacterFile(uint8_t bufferId[]);
+      uint8_t collectFingerImage();
+      uint8_t generateCharacterFile(uint8_t bufferId[]);
+      void displayOLED();
 };
 
 #endif

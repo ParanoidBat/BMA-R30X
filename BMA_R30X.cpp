@@ -6,7 +6,23 @@
 #include "Arduino.h"
 #include "BMA_R30X.h"
 
-BMA::BMA(){}
+BMA::BMA(){
+    display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+    if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+        // Serial.println(("SSD1306 allocation failed\n"));
+        // cue it with LEDs
+    }
+
+    display->setTextSize(1);
+    display->setTextColor(WHITE);
+}
+
+void BMA::displayOLED(){
+    display->clearDisplay();
+    display->setCursor(0, 10);
+    display->println("Im Batman");
+    display->display();
+}
 
 bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_length, bool print_data){
     // separate header and address into bytes to respect big endian format
