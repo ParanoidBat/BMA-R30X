@@ -63,11 +63,11 @@ class BMA{
       bool fingerSearch();
       bool uploadTemplate();
       bool readTemplateFromLib();
+      void displayOLED(char* msg);
 
     private:
       uint8_t collectFingerImage();
       uint8_t generateCharacterFile(uint8_t bufferId[]);
-      void displayOLED();
 };
 
 #endif

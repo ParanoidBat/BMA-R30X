@@ -17,10 +17,10 @@ BMA::BMA(){
     display->setTextColor(WHITE);
 }
 
-void BMA::displayOLED(){
+void BMA::displayOLED(char* msg){
     display->clearDisplay();
     display->setCursor(0, 10);
-    display->println("Im Batman");
+    display->println(msg);
     display->display();
 }
 
