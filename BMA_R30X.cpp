@@ -418,12 +418,12 @@ uint8_t BMA::collectFingerImage(){
     uint8_t rx_response = 0x02;
 
     while(rx_response == 0x02){
-        Serial.println("Place finger");
+        displayOLED("Place finger");
         sendPacket(PID_COMMAND, CMD_COLLECT_FINGER_IMAGE, NULL, 0);
         rx_response = receivePacket();
     }
 
-    Serial.println("Remove finger");
+    displayOLED("Remove finger");
     return rx_response;
 }
 
