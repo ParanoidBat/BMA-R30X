@@ -8,11 +8,10 @@
 #define BMA_R30X_h
 
 #include "Arduino.h"
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
+// #include <SPI.h>
+// #include <Wire.h>
+// #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <SoftwareSerial.h>
 
 // OLED screen resolution ('0.96)
 #define SCREEN_WIDTH 128

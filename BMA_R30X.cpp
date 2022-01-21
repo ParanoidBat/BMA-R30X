@@ -3,13 +3,12 @@
     Created by Batman - CEO Meem Ent., April 18, 2021.
 */
 
-#include "Arduino.h"
 #include "BMA_R30X.h"
 
 BMA::BMA(){
     display = new Adafruit_SSD1306(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
     if(!display->begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
-        // Serial.println(("SSD1306 allocation failed\n"));
+        // Serial.println(("SSD1306 allocation failed"));
         // cue it with LEDs
     }
 
@@ -133,12 +132,12 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
 
     if(serial_buffer_length == 0){
         Serial.println("received no response");
-        return false;
+        return 0x02;
     }
 
     if(serial_buffer_length < 10){
         Serial.println("bad packet nigga");
-        return false;
+        return 0x02;
     }
 
     uint16_t token = 0;   // to iterate over switch cases
@@ -158,34 +157,34 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
             // high byte
             if(serial_buffer[token] == ((HEADER >> 8) & 0xFF)) break;
             
-            return false;
+            return 0x02;
             
         case 1:
             // low byte
             if(serial_buffer[token] == (HEADER & 0xFF)) break;
-            
-            return false;
+
+            return 0x02;
             
         // cases 2 to 5 check for device address. high to low byte
         case 2:
             if(serial_buffer[token] == ((M_ADDRESS >> 24) & 0xFF) ) break;
             
-            return false;
+            return 0x02;
 
         case 3:
             if(serial_buffer[token] == ((M_ADDRESS >> 16) & 0xFF) ) break;
             
-            return false;
+            return 0x02;
 
         case 4:
             if(serial_buffer[token] == ((M_ADDRESS >> 8) & 0xFF) ) break;
             
-            return false;
+            return 0x02;
 
         case 5:
             if(serial_buffer[token] == (M_ADDRESS & 0xFF) ) break;
             
-            return false;
+            return 0x02;
 
         // check for valid packet type
         case 6:
@@ -194,7 +193,7 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
                 break;
             }
             
-            return false;
+            return 0x02;
 
         // read packet data length
         case 7:
@@ -209,7 +208,7 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
                 break;
             }
             
-            return false;
+            return 0x02;
 
         // case 8 won't be hit as after case 7, token value is 9
         // read confirmation code
@@ -290,45 +289,6 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
     }
 }
 
-uint8_t BMA::receiveTemplate(){
-    // function exclusively written for reading template data sent by module
-
-    uint8_t byte_buffer = 0;
-    uint32_t timeout = 5000;
-    uint32_t start_time = millis();
-    uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0};
-    uint16_t serial_buffer_length = 0;
-
-    while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
-        if(Serial.available()){
-            byte_buffer = Serial.read();
-        
-            serial_buffer[serial_buffer_length] = byte_buffer;
-            serial_buffer_length++;
-        }
-    }
-
-    if(serial_buffer_length == 0){
-        Serial.println("received no response");
-        return 0xff;
-    }
-
-    if(serial_buffer_length < 10){
-        Serial.println("bad packet nigga");
-        return 0xff;
-    }
-
-    template_file = new uint8_t[serial_buffer_length];
-    template_length = serial_buffer_length;
-
-    for (uint16_t i = 0; i < serial_buffer_length; i++){
-        template_file[i] = serial_buffer[i];
-    }
-
-    // confirmation code
-    return serial_buffer[9];
-}
-
 bool BMA::verifyPassword(uint32_t password){
     // store password seperately in 4 bytes.
     uint8_t password_bytes[4] = {0};
@@ -339,10 +299,9 @@ bool BMA::verifyPassword(uint32_t password){
 
 
     sendPacket(PID_COMMAND, CMD_VERIFY_PASSWORD, password_bytes, 4);
-    uint8_t rx_response = 0xff;
-    rx_response = receivePacket();
+    uint8_t response = receivePacket();
     
-    if(rx_response == 0x00) return true;
+    if(response == 0x00) return true;
     return false;
 }
 
@@ -380,7 +339,8 @@ bool BMA::enrollFinger(){
     rx_response = receivePacket();
 
     if(rx_response == 0x00){
-        return uploadTemplate();
+        // return uploadTemplate();
+        return true;
     }
 
     return false;
@@ -422,7 +382,7 @@ uint8_t BMA::collectFingerImage(){
         sendPacket(PID_COMMAND, CMD_COLLECT_FINGER_IMAGE, NULL, 0);
         rx_response = receivePacket();
     }
-
+    
     displayOLED("Remove finger");
     return rx_response;
 }
@@ -442,27 +402,38 @@ bool BMA::uploadTemplate(){
     */
 
     uint8_t bufferId[1] = {1};
+    uint8_t byte_buffer = 0;
+    uint32_t timeout = 20000;
+    uint32_t start_time = millis();
+    uint8_t serial_buffer[534] = {0xff};
+    uint16_t serial_buffer_length = 0;
 
     sendPacket(PID_COMMAND, CMD_UPLOAD_TEMPLATE, bufferId, 1);
-    uint8_t rx_response = receiveTemplate();
 
-    if(rx_response == 0x00){
-        if(template_length > 0){
-            for(int i = 0; i < template_length; i++){
-                // Serial.print(template_file[i], HEX);
-                // do some stuff here
-            }
+    while(serial_buffer_length < 534 && (millis() - start_time) < timeout){
+        if(Serial.available()){
+            serial_buffer[serial_buffer_length++] = Serial.read();
         }
-        return true;
-    }
-    else if(rx_response == 0x0d){
-        Serial.println("template not uploaded");
-    }
-    else if(rx_response == 0xff){
-        Serial.println("corrputed or no data received");
     }
 
-    return false;
+    if(serial_buffer_length == 0){
+        Serial.println("received no response updload Temp");
+        return false;
+    }
+
+    if(serial_buffer_length < 10){
+        Serial.println("bad packet nigga upload temp");
+        return false ;
+    }
+
+    Serial.print("Serial buffer length: "); Serial.println(serial_buffer_length);
+
+    for(uint16_t i = 0; i < serial_buffer_length; i++){
+        Serial.print(serial_buffer[i], HEX);
+    }
+    Serial.println();
+
+    return true;
 }
 
 bool BMA::readTemplateFromLib(){
@@ -474,15 +445,19 @@ bool BMA::readTemplateFromLib(){
     uint8_t buffer_id = 1;
 
     data[0] = buffer_id;
-    data[2] = page_id & 0xff;
-    data[3] = (page_id >> 8) & 0xff;
+    // data[1] = page_id & 0xff;
+    // data[2] = (page_id >> 8) & 0xff;
+    data[1] = 0x00;
+    data[2] = 0x03;
 
     sendPacket(PID_COMMAND, CMD_READ_TEMPLATE, data, 3);
 
     uint8_t rx_response = receivePacket();
     if(rx_response != 0x00){
+        Serial.println("readTemplateFromLib returned false");
+        Serial.print("Confirmation Code: "); Serial.println(rx_response, HEX);
         return false;
     }
-
+    Serial.println("Calling uploadTemplate");
     return uploadTemplate();
 }
