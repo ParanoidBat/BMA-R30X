@@ -58,7 +58,7 @@ class BMA{
       uint8_t receivePacket(uint32_t timeout = DEFAULT_TIMEOUT, bool print_data = false);
       uint8_t receiveTemplate();
       bool verifyPassword(uint32_t password = M_PASSWORD);
-      bool enrollFinger();
+      uint16_t enrollFinger();
       bool fingerSearch();
       bool uploadTemplate();
       bool readTemplateFromLib();
