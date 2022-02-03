@@ -307,7 +307,8 @@ bool BMA::verifyPassword(uint32_t password){
 
 uint16_t BMA::enrollFinger(){
     // place finger twice and generate character/template file each time, combine them and store to a given location
-    
+    EEPROM.begin(512);
+
     uint8_t rx_response = 0x02;
 
     rx_response = collectFingerImage();
@@ -329,7 +330,9 @@ uint16_t BMA::enrollFinger(){
     if(!rx_response == 0x00) return false;
 
     uint8_t data[3] = {0};
-    uint16_t location = 3; // save location in EEPROM to calculate next
+    uint16_t location;
+    EEPROM.get(FINGER_LOCATION, location);
+    location++;
     
     data[0] = 0x01; // buffer Id 1
     data[1] = location & 0xFF; // low byte
@@ -339,9 +342,13 @@ uint16_t BMA::enrollFinger(){
     rx_response = receivePacket();
 
     if(rx_response == 0x00){
+        EEPROM.put(FINGER_LOCATION, location);
+        EEPROM.commit();
+        EEPROM.end();
         return location;
     }
 
+    EEPROM.end();
     return 0;
 }
 

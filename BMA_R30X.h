@@ -8,10 +8,16 @@
 #define BMA_R30X_h
 
 #include "Arduino.h"
-// #include <SPI.h>
-// #include <Wire.h>
-// #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <EEPROM.h>
+
+// EEPROM data locations.
+#define NETWORK 0
+#define PASSWORD 8
+#define ORGANIZATION 16
+#define FINGER_LOCATION 24
+#define ATTENDANCE_COUNT 26
+#define ATTENDANCE_STORE 27
 
 // OLED screen resolution ('0.96)
 #define SCREEN_WIDTH 128
@@ -67,6 +73,16 @@ class BMA{
     private:
       uint8_t collectFingerImage();
       uint8_t generateCharacterFile(uint8_t bufferId[]);
+};
+
+struct Attendance{
+  uint16_t authID;
+  uint16_t current_year;
+  uint8_t current_month;
+  uint8_t current_date;
+  uint8_t current_hour;
+  uint8_t current_minute;
+  uint8_t current_second;
 };
 
 #endif
