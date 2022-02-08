@@ -14,6 +14,27 @@ BMA::BMA(){
 
     display->setTextSize(1);
     display->setTextColor(WHITE);
+
+    uint8_t ssid_len = 0, password_len = 0;
+    EEPROM.begin(512);
+    EEPROM.get(NETWORK_LENGTH, ssid_len);
+    EEPROM.get(PASSWORD_LENGTH, password_len);
+
+    // ssid and password start at 2. organization is always 24 bytes
+    if (ssid_len > 0 && password_len > 0){
+        finger_location = 2 + ssid_len + password_len + 24;
+        attendance_count = 2 + ssid_len + password_len + 24 + 1;
+        attendance_store = 2 + ssid_len + password_len + 24 + 1 + 1;
+
+        char str;
+        for (uint8_t i = 2 + ssid_len + password_len, j = 0; j < 24; i++, j++){
+            EEPROM.get(i, str);
+            organizationID += str;
+        }
+    }
+    else displayOLED("Error at startup");
+
+    EEPROM.end();
 }
 
 void BMA::displayOLED(char* msg){
@@ -331,7 +352,7 @@ uint16_t BMA::enrollFinger(){
 
     uint8_t data[3] = {0};
     uint16_t location;
-    EEPROM.get(FINGER_LOCATION, location);
+    EEPROM.get(finger_location, location);
     location++;
     
     data[0] = 0x01; // buffer Id 1
@@ -342,7 +363,7 @@ uint16_t BMA::enrollFinger(){
     rx_response = receivePacket();
 
     if(rx_response == 0x00){
-        EEPROM.put(FINGER_LOCATION, location);
+        EEPROM.put(finger_location, location);
         EEPROM.commit();
         EEPROM.end();
         return location;

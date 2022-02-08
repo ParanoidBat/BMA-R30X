@@ -12,12 +12,8 @@
 #include <EEPROM.h>
 
 // EEPROM data locations.
-#define NETWORK 0
-#define PASSWORD 8
-#define ORGANIZATION 16
-#define FINGER_LOCATION 24
-#define ATTENDANCE_COUNT 26
-#define ATTENDANCE_STORE 27
+#define NETWORK_LENGTH 0
+#define PASSWORD_LENGTH 1
 
 // OLED screen resolution ('0.96)
 #define SCREEN_WIDTH 128
@@ -54,9 +50,13 @@
 class BMA{
     public:
       uint8_t *rx_data = NULL;
-      uint16_t rx_data_length = 0;
       uint8_t *template_file = NULL;
+      uint8_t finger_location = 0;
+      uint8_t attendance_count = 0;
+      uint8_t attendance_store = 0;
+      uint16_t rx_data_length = 0;
       uint16_t template_length = 0;
+      String organizationID;
       Adafruit_SSD1306 *display = NULL;
 
       BMA();
