@@ -52,8 +52,6 @@ class BMA{
       uint8_t *rx_data = NULL;
       uint8_t *template_file = NULL;
       uint8_t finger_location = 0;
-      uint8_t attendance_count = 0;
-      uint8_t attendance_store = 0;
       uint16_t rx_data_length = 0;
       uint16_t template_length = 0;
       String organizationID;
@@ -77,12 +75,8 @@ class BMA{
 
 struct Attendance{
   uint16_t authID;
-  uint16_t current_year;
-  uint8_t current_month;
-  uint8_t current_date;
-  uint8_t current_hour;
-  uint8_t current_minute;
-  uint8_t current_second;
+  String date;
+  String time;
 };
 
 #endif

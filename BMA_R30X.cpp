@@ -23,8 +23,6 @@ BMA::BMA(){
     // ssid and password start at 2. organization is always 24 bytes
     if (ssid_len > 0 && password_len > 0){
         finger_location = 2 + ssid_len + password_len + 24;
-        attendance_count = 2 + ssid_len + password_len + 24 + 1;
-        attendance_store = 2 + ssid_len + password_len + 24 + 1 + 1;
 
         char str;
         for (uint8_t i = 2 + ssid_len + password_len, j = 0; j < 24; i++, j++){
