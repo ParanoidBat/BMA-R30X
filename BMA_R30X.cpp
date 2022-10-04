@@ -77,7 +77,30 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
 
     check_sum_in_bytes[0] = check_sum & 0xFF; // get low byte
     check_sum_in_bytes[1] = (check_sum >> 8) & 0xFF; // get high byte
-    
+
+    if(print_data){
+        Serial.println("Start printing data");
+
+        Serial.print(header_bytes[1], HEX);
+        Serial.println(header_bytes[0], HEX);
+        Serial.print(address_bytes[3], HEX);
+        Serial.print(address_bytes[2], HEX);
+        Serial.print(address_bytes[1], HEX);
+        Serial.println(address_bytes[0], HEX);
+        Serial.println(pid, HEX);
+        Serial.print(packet_length_in_bytes[1], HEX);
+        Serial.println(packet_length_in_bytes[0], HEX);
+        Serial.println(cmd, HEX);
+        for(int i = 0; i < data_length; i++){
+            Serial.print(data[i], HEX);
+        }
+        Serial.println();
+        Serial.print(check_sum_in_bytes[1], HEX);
+        Serial.println(check_sum_in_bytes[0], HEX);
+        
+        Serial.println("End");
+    }
+
     // write to serial. high bytes will be transferred first
     // header
     Serial.write(header_bytes[1]);
@@ -108,45 +131,18 @@ bool BMA::sendPacket(uint8_t pid, uint8_t cmd, uint8_t* data, uint16_t data_leng
     Serial.write(check_sum_in_bytes[1]);
     Serial.write(check_sum_in_bytes[0]);
 
-    if(print_data){
-        Serial.println("Start printing data");
-
-        Serial.print(header_bytes[1], HEX);
-        Serial.println(header_bytes[0], HEX);
-        Serial.print(address_bytes[3], HEX);
-        Serial.print(address_bytes[2], HEX);
-        Serial.print(address_bytes[1], HEX);
-        Serial.println(address_bytes[0], HEX);
-        Serial.println(pid, HEX);
-        Serial.print(packet_length_in_bytes[1], HEX);
-        Serial.println(packet_length_in_bytes[0], HEX);
-        Serial.println(cmd, HEX);
-        for(int i = 0; i < data_length; i++){
-            Serial.print(data[i], HEX);
-        }
-        Serial.println();
-        Serial.print(check_sum_in_bytes[1], HEX);
-        Serial.println(check_sum_in_bytes[0], HEX);
-        
-        Serial.println("End");
-    }
-
     return true;
 }
 
 uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
-    uint8_t* data_buffer = new uint8_t[64];
     uint8_t serial_buffer[FPS_DEFAULT_SERIAL_BUFFER_LENGTH] = {0}; // will store high byte at start of array
     uint16_t serial_buffer_length = 0;
-    uint8_t byte_buffer = 0;
     uint32_t start_time = millis();
 
     // wait for response for set timeout
     while(serial_buffer_length < FPS_DEFAULT_SERIAL_BUFFER_LENGTH && millis() - start_time < timeout){
         if(Serial.available()){
-            byte_buffer = Serial.read();
-        
-            serial_buffer[serial_buffer_length] = byte_buffer;
+            serial_buffer[serial_buffer_length] = Serial.read();
             serial_buffer_length++;
         }
     }
@@ -161,6 +157,7 @@ uint8_t BMA::receivePacket(uint32_t timeout, bool print_data){
         return 0x02;
     }
 
+    uint8_t* data_buffer = new uint8_t[64];
     uint16_t token = 0;   // to iterate over switch cases
     uint8_t packet_type;  // received packet type to use in checking checksum
     uint8_t rx_packet_length[2]; // received packet length
@@ -320,8 +317,8 @@ bool BMA::verifyPassword(uint32_t password){
 
 
     sendPacket(PID_COMMAND, CMD_VERIFY_PASSWORD, password_bytes, 4);
-    uint8_t response = receivePacket();
-    
+    uint8_t response = receivePacket(4000);
+
     if(response == 0x00) return true;
     return false;
 }
