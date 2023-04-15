@@ -20,14 +20,14 @@ BMA::BMA(){
     EEPROM.get(NETWORK_LENGTH, ssid_len);
     EEPROM.get(PASSWORD_LENGTH, password_len);
 
-    // ssid and password start at 2. organization is always 24 bytes
+    // ssid and password start at 2. organization id is 5 bytes
     if (ssid_len > 0 && password_len > 0){
-        finger_location = 2 + ssid_len + password_len + 24;
-        attendance_count = 2 + ssid_len + password_len + 24 + 1;
-        attendance_store = 2 + ssid_len + password_len + 24 + 1 + 1;
+        finger_location = 2 + ssid_len + password_len + 5;
+        attendance_count = 2 + ssid_len + password_len + 5 + 1;
+        attendance_store = 2 + ssid_len + password_len + 5 + 1 + 1;
 
         char str;
-        for (uint8_t i = 2 + ssid_len + password_len, j = 0; j < 24; i++, j++){
+        for (uint8_t i = 2 + ssid_len + password_len, j = 0; j < 5; i++, j++){
             EEPROM.get(i, str);
             organizationID += str;
         }
