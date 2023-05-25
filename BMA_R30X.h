@@ -51,12 +51,14 @@ class BMA{
     public:
       uint8_t *rx_data = NULL;
       uint8_t *template_file = NULL;
-      uint8_t finger_location = 0;
-      uint8_t attendance_count = 0;
+      int finger_location = 0;
+      int attendance_count = 0;
       uint8_t attendance_store = 0;
       uint16_t rx_data_length = 0;
       uint16_t template_length = 0;
-      String organizationID;
+      String organizationID = "";
+      String ssid = "";
+      String password = "";
       Adafruit_SSD1306 *display = NULL;
 
       BMA();

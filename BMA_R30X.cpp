@@ -27,7 +27,15 @@ BMA::BMA(){
         attendance_store = 2 + ssid_len + password_len + 5 + 1 + 1;
 
         char str;
-        for (uint8_t i = 2 + ssid_len + password_len, j = 0; j < 5; i++, j++){
+        for(int i = 2; i < ssid_len; i++){
+             EEPROM.get(i, str);
+             ssid += str;
+        }
+        for(int i = 2 + ssid_len; i < password_len; i++){
+            EEPROM.get(i, str);
+            password += str;
+        }
+        for (int i = 2 + ssid_len + password_len, j = 0; j < 5; i++, j++){
             EEPROM.get(i, str);
             organizationID += str;
         }
